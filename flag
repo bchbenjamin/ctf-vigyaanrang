@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+WEBHOOK_URL="https://example.com/webhook/fim-flag"
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: flag -d <payload>
+
+Payload format:
+  First 3 characters  -> user_id
+  Remaining characters -> flag_no
+
+Example:
+  flag -d 12345
+EOF
+}
+
+error() {
+  printf 'Error: %s\n' "$1" >&2
+}
+
+main() {
+  local payload=""
+  local user_id=""
+  local flag_no=""
+  local json_payload=""
+
+  while getopts ":d:h" opt; do
+    case "${opt}" in
+      d)
+        payload="${OPTARG}"
+        ;;
+      h)
+        usage
+        exit 0
+        ;;
+      :)
+        error "option -${OPTARG} requires a value"
+        usage
+        exit 2
+        ;;
+      \?)
+        error "invalid option: -${OPTARG}"
+        usage
+        exit 2
+        ;;
+    esac
+  done
+
+  if [[ -z "${payload}" ]]; then
+    error "missing required -d payload"
+    usage
+    exit 2
+  fi
+
+  if (( ${#payload} < 4 )); then
+    error "payload must be at least 4 characters long"
+    exit 2
+  fi
+
+  user_id="${payload:0:3}"
+  flag_no="${payload:3}"
+  json_payload=$(printf '{"user_id": "%s", "flag_no": "%s"}' "${user_id}" "${flag_no}")
+
+  curl --silent --show-error --fail \
+    --request POST \
+    --header "Content-Type: application/json" \
+    --data "${json_payload}" \
+    "${WEBHOOK_URL}"
+}
+
+main "$@"
