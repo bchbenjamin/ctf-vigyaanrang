@@ -8,8 +8,12 @@ usage() {
   cat >&2 <<'EOF'
 Usage: flag -d <payload>
 
+Options:
+  -d <payload>  Send the payload to the webhook
+  -h, --help    Show this help message
+
 Payload format:
-  First 3 characters  -> user_id
+  First 3 characters   -> user_id
   Remaining characters -> flag_no
 
 Example:
@@ -27,8 +31,22 @@ main() {
   local flag_no=""
   local json_payload=""
 
-  while getopts ":d:h" opt; do
+  # Added '-' to the getopts string to catch long options like --help
+  while getopts ":d:h-" opt; do
     case "${opt}" in
+      -)
+        case "${OPTARG}" in
+          help)
+            usage
+            exit 0
+            ;;
+          *)
+            error "invalid option: --${OPTARG}"
+            usage
+            exit 2
+            ;;
+        esac
+        ;;
       d)
         payload="${OPTARG}"
         ;;
