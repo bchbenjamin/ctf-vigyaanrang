@@ -10,6 +10,7 @@ PLAYER_DIRS=(
 )
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FLAG_SOURCE="${SCRIPT_DIR}/flag"
+FAILSAFE_SOURCE="${SCRIPT_DIR}/failsafe.sh"
 FLAG_TARGET="/usr/local/bin/flag"
 
 log() {
@@ -39,6 +40,24 @@ create_mock_environment() {
   done
 }
 
+make_scripts_executable() {
+  log "Setting executable permissions for local scripts..."
+  
+  if [[ -f "${FLAG_SOURCE}" ]]; then
+    chmod +x "${FLAG_SOURCE}"
+    log "Made ${FLAG_SOURCE} executable."
+  else
+    error "Warning: ${FLAG_SOURCE} not found in current directory."
+  fi
+
+  if [[ -f "${FAILSAFE_SOURCE}" ]]; then
+    chmod +x "${FAILSAFE_SOURCE}"
+    log "Made ${FAILSAFE_SOURCE} executable."
+  else
+    error "Warning: ${FAILSAFE_SOURCE} not found in current directory."
+  fi
+}
+
 install_flag_command() {
   local reply
 
@@ -47,14 +66,15 @@ install_flag_command() {
     return 1
   fi
 
-  read -r -p "Move the flag script to ${FLAG_TARGET} and make it executable? [y/N]: " reply
+  read -r -p "Move the flag script to ${FLAG_TARGET} and make it accessible system-wide? [y/N]: " reply
   case "${reply}" in
     [yY]|[yY][eE][sS])
+      # Using install with -m 0755 automatically ensures it is executable at the target location
       sudo install -m 0755 "${FLAG_SOURCE}" "${FLAG_TARGET}"
       log "Installed flag to ${FLAG_TARGET}"
       ;;
     *)
-      log "Skipped system-wide installation of flag"
+      log "Skipped system-wide installation of flag (it is still executable locally)"
       ;;
   esac
 }
@@ -62,6 +82,7 @@ install_flag_command() {
 main() {
   install_packages
   create_mock_environment
+  make_scripts_executable
   install_flag_command
   log "Setup complete."
 }
