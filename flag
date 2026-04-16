@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-WEBHOOK_URL="https://example.com/webhook/fim-flag"
+WEBHOOK_URL="https://next-lid-rare.ngrok-free.dev/webhook-test/ctf"
 
 usage() {
   cat >&2 <<'EOF'
